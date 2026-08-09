@@ -45,8 +45,8 @@ export default function LobbyPage() {
       })
     })
 
-    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnEndTime: number }) => {
-      sessionStorage.setItem(`game-state-${code}`, JSON.stringify(data))
+    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnEndTime: number; hostId: string }) => {
+      sessionStorage.setItem(`game-state-${code}`, JSON.stringify({ ...data, hostId: data.hostId ?? hostId }))
       router.push(`/game/${code}`)
     })
 

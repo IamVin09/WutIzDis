@@ -1,38 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
 export type ScoreEntry = { id: string; name: string; avatar: string; score: number }
 
 type Props = {
   scores: ScoreEntry[]
   isGameOver: boolean
-  leaderboardEndTime?: number | null
-  nextGiverId?: string
-  myPlayerId?: string
+  isHost?: boolean
   onNextTurnReady?: () => void
 }
 
-export function Leaderboard({ scores, isGameOver, leaderboardEndTime, nextGiverId, myPlayerId, onNextTurnReady }: Props) {
-  const [countdown, setCountdown] = useState<number>(10)
+export function Leaderboard({ scores, isGameOver, isHost, onNextTurnReady }: Props) {
   const sorted = [...scores].sort((a, b) => b.score - a.score)
   const winner = sorted[0]
-
-  useEffect(() => {
-    if (isGameOver || !leaderboardEndTime) return
-
-    const update = () => {
-      const remaining = Math.max(0, Math.floor((leaderboardEndTime - Date.now()) / 1000))
-      setCountdown(remaining)
-      if (remaining === 0 && myPlayerId === nextGiverId) {
-        onNextTurnReady?.()
-      }
-    }
-
-    update()
-    const id = setInterval(update, 500)
-    return () => clearInterval(id)
-  }, [leaderboardEndTime, isGameOver, myPlayerId, nextGiverId, onNextTurnReady])
 
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
@@ -63,12 +42,22 @@ export function Leaderboard({ scores, isGameOver, leaderboardEndTime, nextGiverI
         </div>
 
         {!isGameOver && (
-          <p className="text-center text-gray-400 text-sm">
-            {myPlayerId === nextGiverId
-              ? `Your turn next! Starting in ${countdown}s…`
-              : `Next turn in ${countdown}s…`}
-          </p>
+          isHost
+            ? (
+              <button
+                onClick={onNextTurnReady}
+                className="w-full mt-2 bg-green-600 hover:bg-green-500 rounded-xl py-3 font-bold text-lg transition-colors"
+              >
+                ▶ Next Turn
+              </button>
+            )
+            : (
+              <p className="text-center text-gray-500 text-sm py-2">
+                Waiting for host to start the next turn…
+              </p>
+            )
         )}
+
         {isGameOver && (
           <a
             href="/"

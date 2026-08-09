@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
   }
 
   const isGameOver = lobby.currentGiverIndex + 1 >= lobby.playerOrder.length
-  const leaderboardEndTime = Date.now() + 10_000
 
   const scores = lobby.players.map((p) => ({ id: p.id, name: p.name, avatar: p.avatar, score: p.score }))
 
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
 
   lobby.status = 'turn_end'
-  lobby.leaderboardEndTime = leaderboardEndTime
+  lobby.leaderboardEndTime = null
   await setLobby(lobby)
 
   const nextGiverIndex = lobby.currentGiverIndex + 1
@@ -40,7 +39,6 @@ export async function POST(req: NextRequest) {
   await pusherServer.trigger(`taboo-${code}`, 'game:turn-ended', {
     scores,
     nextGiverId,
-    leaderboardEndTime,
     isGameOver: false,
   })
 

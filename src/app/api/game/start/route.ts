@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   const playerOrder = shuffle(lobby.players.map((p) => p.id))
   const wordOrder = shuffle(Array.from({ length: WORDS.length }, (_, i) => i))
-  const turnEndTime = Date.now() + 180_000
+  const turnEndTime = Date.now() + 120_000
 
   lobby.status = 'playing'
   lobby.playerOrder = playerOrder
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     playerOrder,
     currentGiverId: playerOrder[0],
     turnEndTime,
+    hostId: lobby.hostId,
   })
 
   return NextResponse.json({ ok: true })

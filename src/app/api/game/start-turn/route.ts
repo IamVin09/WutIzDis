@@ -9,14 +9,12 @@ export async function POST(req: NextRequest) {
   if (!lobby) return NextResponse.json({ error: 'Lobby not found' }, { status: 404 })
   if (lobby.status !== 'turn_end') return NextResponse.json({ ok: false })
 
+  if (playerId !== lobby.hostId) return NextResponse.json({ error: 'Not the host' }, { status: 403 })
+
   const nextGiverIndex = lobby.currentGiverIndex + 1
   const nextGiverId = lobby.playerOrder[nextGiverIndex]
-  if (playerId !== nextGiverId) return NextResponse.json({ error: 'Not the next giver' }, { status: 403 })
-  if (lobby.leaderboardEndTime && Date.now() < lobby.leaderboardEndTime) {
-    return NextResponse.json({ error: 'Leaderboard not done yet' }, { status: 400 })
-  }
 
-  const turnEndTime = Date.now() + 180_000
+  const turnEndTime = Date.now() + 120_000
   lobby.status = 'playing'
   lobby.currentGiverIndex = nextGiverIndex
   lobby.turnEndTime = turnEndTime

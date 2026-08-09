@@ -19,18 +19,18 @@ export default function GamePage() {
   const [playerOrder, setPlayerOrder] = useState<string[]>([])
   const [currentGiverIndex, setCurrentGiverIndex] = useState(0)
   const [turnEndTime, setTurnEndTime] = useState<number | null>(null)
-  const [leaderboardEndTime, setLeaderboardEndTime] = useState<number | null>(null)
   const [scores, setScores] = useState<ScoreEntry[]>([])
   const [wordCard, setWordCard] = useState<WordCard | null>(null)
   const [activity, setActivity] = useState<string[]>([])
   const [isGameOver, setIsGameOver] = useState(false)
-  const [nextGiverId, setNextGiverId] = useState<string>('')
+  const [hostId, setHostId] = useState<string>('')
 
   const players = useRef<Record<string, { name: string; avatar: string }>>({})
   const currentGiverIdRef = useRef<string>('')
 
   const currentGiverId = playerOrder[currentGiverIndex] ?? ''
   const isGiver = playerId.current === currentGiverId
+  const isHost = playerId.current === hostId
   currentGiverIdRef.current = currentGiverId
 
   const addActivity = (msg: string) => setActivity((prev) => [...prev.slice(-19), msg])
@@ -49,20 +49,22 @@ export default function GamePage() {
     // Restore initial game state from sessionStorage (set by lobby page on game:started)
     const stored = sessionStorage.getItem(`game-state-${code}`)
     if (stored) {
-      const { playerOrder: po, currentGiverId: cg, turnEndTime: te } = JSON.parse(stored)
+      const { playerOrder: po, currentGiverId: cg, turnEndTime: te, hostId: hi } = JSON.parse(stored)
       setPlayerOrder(po)
       setCurrentGiverIndex(po.indexOf(cg))
       setTurnEndTime(te)
+      if (hi) setHostId(hi)
       setPhase('playing')
     }
 
     const pusher = getPusherClient()
     const channel = pusher.subscribe(`taboo-${code}`)
 
-    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnEndTime: number }) => {
+    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnEndTime: number; hostId: string }) => {
       setPlayerOrder(data.playerOrder)
       setCurrentGiverIndex(data.playerOrder.indexOf(data.currentGiverId))
       setTurnEndTime(data.turnEndTime)
+      if (data.hostId) setHostId(data.hostId)
       setPhase('playing')
     })
 
@@ -86,12 +88,9 @@ export default function GamePage() {
     channel.bind('game:turn-ended', (data: {
       scores: ScoreEntry[]
       nextGiverId: string
-      leaderboardEndTime: number
       isGameOver: boolean
     }) => {
       setScores(data.scores)
-      setNextGiverId(data.nextGiverId)
-      setLeaderboardEndTime(data.leaderboardEndTime)
       setIsGameOver(data.isGameOver)
       setPhase('leaderboard')
       setWordCard(null)
@@ -104,7 +103,6 @@ export default function GamePage() {
         return prev
       })
       setTurnEndTime(data.turnEndTime)
-      setLeaderboardEndTime(null)
       setPhase('playing')
       setActivity([])
     })
@@ -179,9 +177,7 @@ export default function GamePage() {
         <Leaderboard
           scores={scores}
           isGameOver={isGameOver}
-          leaderboardEndTime={leaderboardEndTime}
-          nextGiverId={nextGiverId}
-          myPlayerId={playerId.current}
+          isHost={isHost}
           onNextTurnReady={handleNextTurnReady}
         />
       )}
