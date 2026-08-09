@@ -16,11 +16,9 @@ export default function LobbyPage() {
   const [starting, setStarting] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
-  const playerId = useRef<string>('')
+  const playerId = useRef<string>(getOrCreatePlayerId())
 
   useEffect(() => {
-    playerId.current = getOrCreatePlayerId()
-
     // Load initial state by re-joining (idempotent)
     const name = sessionStorage.getItem('player-name') ?? 'Player'
     const avatar = sessionStorage.getItem('player-avatar') ?? '🦊'
@@ -33,6 +31,7 @@ export default function LobbyPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.hostId) setHostId(data.hostId)
+        if (data.players) setPlayers(data.players)
       })
       .catch(() => setError('Failed to connect to lobby'))
 

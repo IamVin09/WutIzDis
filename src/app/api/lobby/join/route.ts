@@ -29,5 +29,5 @@ export async function POST(req: NextRequest) {
     await pusherServer.trigger(`taboo-${lobby.code}`, 'lobby:player-joined', { player })
   }
 
-  return NextResponse.json({ code: lobby.code, hostId: lobby.hostId })
+  return NextResponse.json({ code: lobby.code, hostId: lobby.hostId, players: lobby.players })
 }
