@@ -20,9 +20,8 @@ export function HowToPlayModal({ onClose }: Props) {
             <ul className="text-sm text-gray-300 space-y-1 list-disc list-inside">
               <li>Describe the target word</li>
               <li>Do NOT say the taboo words</li>
-              <li>You have 3 minutes per turn</li>
+              <li>You have 2 minutes per turn</li>
               <li>Skip words you&apos;re stuck on</li>
-              <li>Get points for each correct guess!</li>
             </ul>
           </div>
           <div className="bg-green-900/50 rounded-xl p-4">
