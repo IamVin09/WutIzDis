@@ -17,6 +17,7 @@ export default function LobbyPage() {
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
   const playerId = useRef<string>(getOrCreatePlayerId())
+  const navigatedRef = useRef(false)
 
   useEffect(() => {
     // Load initial state by re-joining (idempotent)
@@ -45,13 +46,17 @@ export default function LobbyPage() {
       })
     })
 
-    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnEndTime: number; hostId: string }) => {
-      sessionStorage.setItem(`game-state-${code}`, JSON.stringify({ ...data, hostId: data.hostId ?? hostId }))
+    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnStartTime: number; turnEndTime: number; serverNow: number; hostId: string }) => {
+      const clockOffset = data.serverNow - Date.now()
+      sessionStorage.setItem(`game-state-${code}`, JSON.stringify({ ...data, hostId: data.hostId ?? hostId, clockOffset }))
+      navigatedRef.current = true
       router.push(`/game/${code}`)
     })
 
     return () => {
-      pusher.unsubscribe(`taboo-${code}`)
+      if (!navigatedRef.current) {
+        pusher.unsubscribe(`taboo-${code}`)
+      }
     }
   }, [code, router])
 

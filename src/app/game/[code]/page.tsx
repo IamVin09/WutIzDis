@@ -67,12 +67,13 @@ export default function GamePage() {
     // Restore initial game state from sessionStorage (set by lobby page on game:started)
     const stored = sessionStorage.getItem(`game-state-${code}`)
     if (stored) {
-      const { playerOrder: po, currentGiverId: cg, turnStartTime: ts, turnEndTime: te, hostId: hi } = JSON.parse(stored)
+      const { playerOrder: po, currentGiverId: cg, turnStartTime: ts, turnEndTime: te, hostId: hi, clockOffset: co } = JSON.parse(stored)
       setPlayerOrder(po)
       setCurrentGiverIndex(po.indexOf(cg))
       if (ts) setTurnStartTime(ts)
       setTurnEndTime(te)
       if (hi) setHostId(hi)
+      if (co != null) setClockOffset(co)
       setPhase('playing')
     }
 
