@@ -8,6 +8,7 @@ type Props = {
   giverName: string
   giverAvatar: string
   turnEndTime: number | null
+  clockOffset: number
   onGuess: (guess: string) => void
   turnNumber: number
   totalTurns: number
@@ -15,7 +16,7 @@ type Props = {
   activity: string[]
 }
 
-export function GuesserView({ giverName, giverAvatar, turnEndTime, onGuess, turnNumber, totalTurns, scores, activity }: Props) {
+export function GuesserView({ giverName, giverAvatar, turnEndTime, clockOffset, onGuess, turnNumber, totalTurns, scores, activity }: Props) {
   const [input, setInput] = useState('')
 
   const submit = () => {
@@ -35,7 +36,7 @@ export function GuesserView({ giverName, giverAvatar, turnEndTime, onGuess, turn
         is describing!
       </div>
 
-      <CountdownTimer endTime={turnEndTime} />
+      <CountdownTimer endTime={turnEndTime} clockOffset={clockOffset} />
 
       <div className="w-full bg-gray-800/40 rounded-2xl p-5 text-center border border-gray-700">
         <p className="text-gray-400 text-sm mb-1">Listen and type your answer</p>

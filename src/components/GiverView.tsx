@@ -7,6 +7,7 @@ type Props = {
   target: string
   taboo: string[]
   turnEndTime: number | null
+  clockOffset: number
   onSkip: () => void
   onTimerExpire: () => void
   turnNumber: number
@@ -15,14 +16,14 @@ type Props = {
   activity: string[]
 }
 
-export function GiverView({ target, taboo, turnEndTime, onSkip, onTimerExpire, turnNumber, totalTurns, scores, activity }: Props) {
+export function GiverView({ target, taboo, turnEndTime, clockOffset, onSkip, onTimerExpire, turnNumber, totalTurns, scores, activity }: Props) {
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-lg mx-auto py-6 px-4">
       <div className="text-center text-gray-400 text-sm font-medium">
         Turn {turnNumber} of {totalTurns} — You&apos;re describing!
       </div>
 
-      <CountdownTimer endTime={turnEndTime} onExpire={onTimerExpire} />
+      <CountdownTimer endTime={turnEndTime} clockOffset={clockOffset} onExpire={onTimerExpire} />
 
       <div className="w-full bg-gray-800 rounded-2xl p-6 text-center shadow-xl">
         <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Describe this word</p>

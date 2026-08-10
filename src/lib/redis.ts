@@ -33,6 +33,7 @@ export type LobbyState = {
   currentGiverIndex: number
   wordOrder: number[]
   currentWordPosition: number
+  turnStartTime: number | null
   turnEndTime: number | null
   leaderboardEndTime: number | null
 }

@@ -14,9 +14,12 @@ export async function POST(req: NextRequest) {
   const nextGiverIndex = lobby.currentGiverIndex + 1
   const nextGiverId = lobby.playerOrder[nextGiverIndex]
 
-  const turnEndTime = Date.now() + 120_000
+  const now = Date.now()
+  const turnStartTime = now + 5_000
+  const turnEndTime = turnStartTime + 120_000
   lobby.status = 'playing'
   lobby.currentGiverIndex = nextGiverIndex
+  lobby.turnStartTime = turnStartTime
   lobby.turnEndTime = turnEndTime
   lobby.leaderboardEndTime = null
 
@@ -24,7 +27,9 @@ export async function POST(req: NextRequest) {
 
   await pusherServer.trigger(`taboo-${code}`, 'game:next-turn', {
     nextGiverId,
+    turnStartTime,
     turnEndTime,
+    serverNow: now,
   })
 
   return NextResponse.json({ ok: true })

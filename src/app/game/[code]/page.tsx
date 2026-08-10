@@ -18,7 +18,10 @@ export default function GamePage() {
   const [phase, setPhase] = useState<GamePhase>('waiting')
   const [playerOrder, setPlayerOrder] = useState<string[]>([])
   const [currentGiverIndex, setCurrentGiverIndex] = useState(0)
+  const [turnStartTime, setTurnStartTime] = useState<number | null>(null)
   const [turnEndTime, setTurnEndTime] = useState<number | null>(null)
+  const [clockOffset, setClockOffset] = useState(0)
+  const [gracePeriodActive, setGracePeriodActive] = useState(false)
   const [scores, setScores] = useState<ScoreEntry[]>([])
   const [wordCard, setWordCard] = useState<WordCard | null>(null)
   const [activity, setActivity] = useState<string[]>([])
@@ -43,15 +46,31 @@ export default function GamePage() {
     }
   }, [code])
 
+  // Activate grace period whenever turnStartTime changes
+  useEffect(() => {
+    if (!turnStartTime) return
+    const delay = turnStartTime - (Date.now() + clockOffset)
+    if (delay <= 0) {
+      setGracePeriodActive(false)
+      return
+    }
+    setGracePeriodActive(true)
+    const timer = setTimeout(() => setGracePeriodActive(false), delay)
+    return () => clearTimeout(timer)
+  // clockOffset is intentionally omitted: we only recompute when turnStartTime changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turnStartTime])
+
   useEffect(() => {
     playerId.current = getOrCreatePlayerId()
 
     // Restore initial game state from sessionStorage (set by lobby page on game:started)
     const stored = sessionStorage.getItem(`game-state-${code}`)
     if (stored) {
-      const { playerOrder: po, currentGiverId: cg, turnEndTime: te, hostId: hi } = JSON.parse(stored)
+      const { playerOrder: po, currentGiverId: cg, turnStartTime: ts, turnEndTime: te, hostId: hi } = JSON.parse(stored)
       setPlayerOrder(po)
       setCurrentGiverIndex(po.indexOf(cg))
+      if (ts) setTurnStartTime(ts)
       setTurnEndTime(te)
       if (hi) setHostId(hi)
       setPhase('playing')
@@ -60,9 +79,11 @@ export default function GamePage() {
     const pusher = getPusherClient()
     const channel = pusher.subscribe(`taboo-${code}`)
 
-    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnEndTime: number; hostId: string }) => {
+    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnStartTime: number; turnEndTime: number; serverNow: number; hostId: string }) => {
+      setClockOffset(data.serverNow - Date.now())
       setPlayerOrder(data.playerOrder)
       setCurrentGiverIndex(data.playerOrder.indexOf(data.currentGiverId))
+      setTurnStartTime(data.turnStartTime)
       setTurnEndTime(data.turnEndTime)
       if (data.hostId) setHostId(data.hostId)
       setPhase('playing')
@@ -96,12 +117,14 @@ export default function GamePage() {
       setWordCard(null)
     })
 
-    channel.bind('game:next-turn', (data: { nextGiverId: string; turnEndTime: number }) => {
+    channel.bind('game:next-turn', (data: { nextGiverId: string; turnStartTime: number; turnEndTime: number; serverNow: number }) => {
+      setClockOffset(data.serverNow - Date.now())
       setPlayerOrder((prev) => {
         const idx = prev.indexOf(data.nextGiverId)
         setCurrentGiverIndex(idx)
         return prev
       })
+      setTurnStartTime(data.turnStartTime)
       setTurnEndTime(data.turnEndTime)
       setPhase('playing')
       setActivity([])
@@ -119,7 +142,7 @@ export default function GamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
 
-  // Fetch word once phase becomes 'playing' and I am the giver
+  // Fetch word once phase becomes 'playing' and I am the giver (fires during grace period so word is ready)
   useEffect(() => {
     if (phase === 'playing' && isGiver) {
       fetchWord()
@@ -182,11 +205,18 @@ export default function GamePage() {
         />
       )}
 
-      {phase === 'playing' && isGiver && wordCard && (
+      {phase === 'playing' && gracePeriodActive && (
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-gray-400 text-xl animate-pulse">Game starting…</p>
+        </div>
+      )}
+
+      {phase === 'playing' && !gracePeriodActive && isGiver && wordCard && (
         <GiverView
           target={wordCard.target}
           taboo={wordCard.taboo}
           turnEndTime={turnEndTime}
+          clockOffset={clockOffset}
           onSkip={handleSkip}
           onTimerExpire={handleTimerExpire}
           turnNumber={turnNumber}
@@ -196,11 +226,12 @@ export default function GamePage() {
         />
       )}
 
-      {phase === 'playing' && !isGiver && (
+      {phase === 'playing' && !gracePeriodActive && !isGiver && (
         <GuesserView
           giverName={giver?.name ?? '?'}
           giverAvatar={giver?.avatar ?? '🎭'}
           turnEndTime={turnEndTime}
+          clockOffset={clockOffset}
           onGuess={handleGuess}
           turnNumber={turnNumber}
           totalTurns={totalTurns}
@@ -209,7 +240,7 @@ export default function GamePage() {
         />
       )}
 
-      {phase === 'playing' && isGiver && !wordCard && (
+      {phase === 'playing' && !gracePeriodActive && isGiver && !wordCard && (
         <main className="min-h-screen flex items-center justify-center">
           <p className="text-gray-400">Loading your word…</p>
         </main>

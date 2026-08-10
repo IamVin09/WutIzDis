@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     currentGiverIndex: 0,
     wordOrder: [],
     currentWordPosition: 0,
+    turnStartTime: null,
     turnEndTime: null,
     leaderboardEndTime: null,
   }
