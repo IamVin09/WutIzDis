@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CountdownTimer } from './CountdownTimer'
 import type { ScoreEntry } from './Leaderboard'
 
@@ -9,7 +9,7 @@ type Props = {
   giverAvatar: string
   turnEndTime: number | null
   clockOffset: number
-  onGuess: (guess: string) => void
+  onGuess: (guess: string) => Promise<boolean>
   turnNumber: number
   totalTurns: number
   scores: ScoreEntry[]
@@ -18,12 +18,23 @@ type Props = {
 
 export function GuesserView({ giverName, giverAvatar, turnEndTime, clockOffset, onGuess, turnNumber, totalTurns, scores, activity }: Props) {
   const [input, setInput] = useState('')
+  const [showWrong, setShowWrong] = useState(false)
+  const wrongTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const submit = () => {
+  useEffect(() => () => {
+    if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current)
+  }, [])
+
+  const submit = async () => {
     const trimmed = input.trim()
     if (!trimmed) return
-    onGuess(trimmed)
     setInput('')
+    const correct = await onGuess(trimmed)
+    if (!correct) {
+      if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current)
+      setShowWrong(true)
+      wrongTimerRef.current = setTimeout(() => setShowWrong(false), 2000)
+    }
   }
 
   return (
@@ -43,13 +54,19 @@ export function GuesserView({ giverName, giverAvatar, turnEndTime, clockOffset, 
         <p className="text-gray-500 text-xs">The clue-giver cannot say certain words. Be the first to guess right!</p>
       </div>
 
+      {showWrong && (
+        <div className="w-full bg-red-900/70 border border-red-600 text-red-200 text-sm font-semibold text-center rounded-xl py-2 px-4">
+          ❌ Wrong answer — try again!
+        </div>
+      )}
+
       <div className="w-full flex gap-2">
         <input
           autoFocus
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
           placeholder="Type your guess…"
           className="flex-1 bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg"
         />

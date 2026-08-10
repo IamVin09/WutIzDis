@@ -215,12 +215,14 @@ export default function GamePage() {
     })
   }
 
-  async function handleGuess(guess: string) {
-    await fetch('/api/game/guess', {
+  async function handleGuess(guess: string): Promise<boolean> {
+    const res = await fetch('/api/game/guess', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ playerId: playerId.current, code, guess }),
     })
+    const data = await res.json().catch(() => ({}))
+    return data.ok === true
   }
 
   async function handleNextTurnReady() {
