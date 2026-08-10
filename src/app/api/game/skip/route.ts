@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
   const wordIndex = lobby.wordOrder[lobby.currentWordPosition]
   const skippedWord = WORDS[wordIndex].target
 
-  lobby.currentWordPosition += 1
+  if (lobby.currentWordPosition < lobby.wordOrder.length - 1) {
+    lobby.currentWordPosition += 1
+  }
   await setLobby(lobby)
 
   await pusherServer.trigger(`taboo-${code}`, 'game:skipped', { skippedWord })

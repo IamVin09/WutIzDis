@@ -43,7 +43,8 @@ export function GiverView({ target, taboo, turnEndTime, clockOffset, onSkip, onT
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript.toLowerCase()
         for (const t of tabooRef.current) {
-          const pattern = new RegExp(`\\b${t.toLowerCase().replace(/\s+/g, '\\s+')}\\b`)
+          const escaped = t.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          const pattern = new RegExp(`\\b${escaped.replace(/\s+/g, '\\s+')}\\b`)
           if (pattern.test(transcript) && !firedRef.current) {
             firedRef.current = true
             onTabooDetectedRef.current(t)

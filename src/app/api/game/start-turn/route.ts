@@ -19,6 +19,10 @@ export async function POST(req: NextRequest) {
   const turnEndTime = turnStartTime + 120_000
   lobby.status = 'playing'
   lobby.currentGiverIndex = nextGiverIndex
+  // Skip the word that was on-screen when the previous turn's timer expired
+  if (lobby.currentWordPosition < lobby.wordOrder.length - 1) {
+    lobby.currentWordPosition += 1
+  }
   lobby.turnStartTime = turnStartTime
   lobby.turnEndTime = turnEndTime
   lobby.leaderboardEndTime = null

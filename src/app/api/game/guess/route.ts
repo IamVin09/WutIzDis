@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
   if (!guesser) return NextResponse.json({ ok: false, reason: 'unknown_player' })
 
   guesser.score += 1
-  lobby.currentWordPosition += 1
+  if (lobby.currentWordPosition < lobby.wordOrder.length - 1) {
+    lobby.currentWordPosition += 1
+  }
 
   await setLobby(lobby)
 
