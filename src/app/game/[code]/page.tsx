@@ -162,14 +162,25 @@ export default function GamePage() {
     }
   }, [phase, isGiver, fetchWord])
 
-  async function handleTimerExpire() {
+  const handleTimerExpire = useCallback(async () => {
     if (!isGiver) return
-    await fetch('/api/game/end-turn', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerId: playerId.current, code }),
-    })
-  }
+    let attempts = 0
+    while (attempts < 5) {
+      const res = await fetch('/api/game/end-turn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: playerId.current, code }),
+      })
+      if (res.ok) break
+      const data = await res.json().catch(() => ({}))
+      if (data.error === 'Turn not over yet') {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        attempts++
+      } else {
+        break
+      }
+    }
+  }, [isGiver, code])
 
   async function handleSkip() {
     await fetch('/api/game/skip', {

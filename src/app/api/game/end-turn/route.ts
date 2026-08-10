@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   const currentGiverId = lobby.playerOrder[lobby.currentGiverIndex]
   if (playerId !== currentGiverId) return NextResponse.json({ error: 'Not the giver' }, { status: 403 })
-  if (lobby.turnEndTime && Date.now() < lobby.turnEndTime) {
+  if (lobby.turnEndTime && Date.now() < lobby.turnEndTime - 1000) {
     return NextResponse.json({ error: 'Turn not over yet' }, { status: 400 })
   }
 

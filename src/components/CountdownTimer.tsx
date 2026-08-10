@@ -11,9 +11,13 @@ type Props = {
 export function CountdownTimer({ endTime, clockOffset = 0, onExpire }: Props) {
   const [seconds, setSeconds] = useState<number>(0)
   const hasFiredRef = useRef(false)
+  const onExpireRef = useRef(onExpire)
+
+  // Keep ref current without adding onExpire to the main effect's dep array
+  useEffect(() => { onExpireRef.current = onExpire }, [onExpire])
 
   useEffect(() => {
-    hasFiredRef.current = false
+    hasFiredRef.current = false  // reset only when endTime changes (new turn)
     if (!endTime) return
 
     const tick = () => {
@@ -21,7 +25,7 @@ export function CountdownTimer({ endTime, clockOffset = 0, onExpire }: Props) {
       setSeconds(remaining)
       if (remaining === 0 && !hasFiredRef.current) {
         hasFiredRef.current = true
-        onExpire?.()
+        onExpireRef.current?.()
       }
     }
 
@@ -34,7 +38,7 @@ export function CountdownTimer({ endTime, clockOffset = 0, onExpire }: Props) {
       clearInterval(id)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [endTime, clockOffset, onExpire])
+  }, [endTime, clockOffset]) // onExpire intentionally omitted — accessed via onExpireRef
 
   const isLow = seconds <= 30
   const mins = Math.floor(seconds / 60)
