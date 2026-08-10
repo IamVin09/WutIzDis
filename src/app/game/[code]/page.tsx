@@ -64,18 +64,30 @@ export default function GamePage() {
   useEffect(() => {
     playerId.current = getOrCreatePlayerId()
 
-    // Restore initial game state from sessionStorage (set by lobby page on game:started)
+    // Read clockOffset from sessionStorage if available — computed precisely when game:started fired
     const stored = sessionStorage.getItem(`game-state-${code}`)
     if (stored) {
-      const { playerOrder: po, currentGiverId: cg, turnStartTime: ts, turnEndTime: te, hostId: hi, clockOffset: co } = JSON.parse(stored)
-      setPlayerOrder(po)
-      setCurrentGiverIndex(po.indexOf(cg))
-      if (ts) setTurnStartTime(ts)
-      setTurnEndTime(te)
-      if (hi) setHostId(hi)
-      if (co != null) setClockOffset(co)
-      setPhase('playing')
+      try {
+        const parsed = JSON.parse(stored)
+        if (parsed.clockOffset != null) setClockOffset(parsed.clockOffset)
+      } catch { /* ignore malformed data */ }
     }
+
+    // Fetch authoritative current state from server (handles refresh, direct URL, stale data)
+    fetch(`/api/game/state?code=${code}&playerId=${playerId.current}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return
+        setPlayerOrder(data.playerOrder)
+        setCurrentGiverIndex(data.currentGiverIndex)
+        if (data.turnStartTime) setTurnStartTime(data.turnStartTime)
+        setTurnEndTime(data.turnEndTime)
+        setHostId(data.hostId)
+        setScores(data.scores)
+        setIsGameOver(data.isGameOver)
+        setClockOffset(data.serverNow - Date.now())
+        setPhase(data.phase)
+      })
 
     const pusher = getPusherClient()
     const channel = pusher.subscribe(`taboo-${code}`)
