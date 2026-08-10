@@ -189,11 +189,22 @@ export default function GamePage() {
   }, [isGiver, code])
 
   const handleTabooDetected = useCallback(async (word: string) => {
-    await fetch('/api/game/report-taboo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerId: playerId.current, code, detectedWord: word }),
-    })
+    let attempts = 0
+    while (attempts < 5) {
+      try {
+        const res = await fetch('/api/game/report-taboo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId: playerId.current, code, detectedWord: word }),
+        })
+        if (res.ok || res.status < 500) break
+        attempts++
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      } catch {
+        attempts++
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      }
+    }
   }, [code])
 
   async function handleSkip() {

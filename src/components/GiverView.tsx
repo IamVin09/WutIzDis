@@ -36,15 +36,15 @@ export function GiverView({ target, taboo, turnEndTime, clockOffset, onSkip, onT
 
     const recognition = new SR()
     recognition.continuous = true
-    recognition.interimResults = true
+    recognition.interimResults = false
     recognition.lang = 'en-US'
 
     recognition.onresult = (event: any) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript
-        const words = transcript.toLowerCase().split(/\s+/).map((w: string) => w.replace(/[^a-z]/g, ''))
+        const transcript = event.results[i][0].transcript.toLowerCase()
         for (const t of tabooRef.current) {
-          if (words.includes(t.toLowerCase()) && !firedRef.current) {
+          const pattern = new RegExp(`\\b${t.toLowerCase().replace(/\s+/g, '\\s+')}\\b`)
+          if (pattern.test(transcript) && !firedRef.current) {
             firedRef.current = true
             onTabooDetectedRef.current(t)
             return
