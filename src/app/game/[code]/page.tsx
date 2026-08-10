@@ -119,6 +119,12 @@ export default function GamePage() {
       if (playerId.current === currentGiverIdRef.current) fetchWord()
     })
 
+    channel.bind('game:taboo-called', (data: { giverId: string; giverName: string; detectedWord: string; scores: ScoreEntry[] }) => {
+      setScores(data.scores)
+      addActivity(`🚫 Taboo! ${data.giverName} said "${data.detectedWord}" — word skipped, -1 pt`)
+      if (playerId.current === currentGiverIdRef.current) fetchWord()
+    })
+
     channel.bind('game:turn-ended', (data: {
       scores: ScoreEntry[]
       nextGiverId: string
@@ -182,6 +188,14 @@ export default function GamePage() {
     }
   }, [isGiver, code])
 
+  const handleTabooDetected = useCallback(async (word: string) => {
+    await fetch('/api/game/report-taboo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId: playerId.current, code, detectedWord: word }),
+    })
+  }, [code])
+
   async function handleSkip() {
     await fetch('/api/game/skip', {
       method: 'POST',
@@ -243,6 +257,7 @@ export default function GamePage() {
           clockOffset={clockOffset}
           onSkip={handleSkip}
           onTimerExpire={handleTimerExpire}
+          onTabooDetected={handleTabooDetected}
           turnNumber={turnNumber}
           totalTurns={totalTurns}
           scores={scores}
