@@ -31,7 +31,9 @@ export async function POST(req: NextRequest) {
   const guesser = lobby.players.find((p) => p.id === playerId)
   if (!guesser) return NextResponse.json({ ok: false, reason: 'unknown_player' })
 
+  const giver = lobby.players.find((p) => p.id === currentGiverId)
   guesser.score += 1
+  if (giver) giver.score += 1
   if (lobby.currentWordPosition < lobby.wordOrder.length - 1) {
     lobby.currentWordPosition += 1
   }
