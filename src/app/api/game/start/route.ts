@@ -4,7 +4,7 @@ import { pusherServer } from '@/lib/pusher-server'
 import { WORDS } from '@/data/words'
 
 export async function POST(req: NextRequest) {
-  const { playerId, code } = await req.json()
+  const { playerId, code, maxGivers: rawMax } = await req.json()
 
   const lobby = await getLobby(code)
   if (!lobby) return NextResponse.json({ error: 'Lobby not found' }, { status: 404 })
@@ -13,6 +13,9 @@ export async function POST(req: NextRequest) {
   if (lobby.players.length < 2) return NextResponse.json({ error: 'Need at least 2 players' }, { status: 400 })
 
   const playerOrder = shuffle(lobby.players.map((p) => p.id))
+  const maxGivers = rawMax != null
+    ? Math.min(Math.max(1, rawMax), playerOrder.length)
+    : playerOrder.length
   const wordOrder = shuffle(Array.from({ length: WORDS.length }, (_, i) => i))
   const now = Date.now()
   const turnStartTime = now + 5_000
@@ -20,6 +23,7 @@ export async function POST(req: NextRequest) {
 
   lobby.status = 'playing'
   lobby.playerOrder = playerOrder
+  lobby.maxGivers = maxGivers
   lobby.currentGiverIndex = 0
   lobby.wordOrder = wordOrder
   lobby.currentWordPosition = 0
@@ -36,6 +40,7 @@ export async function POST(req: NextRequest) {
     turnEndTime,
     serverNow: now,
     hostId: lobby.hostId,
+    maxGivers,
   })
 
   return NextResponse.json({ ok: true })

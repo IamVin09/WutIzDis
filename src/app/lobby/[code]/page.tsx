@@ -15,6 +15,7 @@ export default function LobbyPage() {
   const [hostId, setHostId] = useState<string>('')
   const [starting, setStarting] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [maxGivers, setMaxGivers] = useState<number | ''>('')
   const [error, setError] = useState('')
   const playerId = useRef<string>(getOrCreatePlayerId())
   const navigatedRef = useRef(false)
@@ -66,7 +67,7 @@ export default function LobbyPage() {
     const res = await fetch('/api/game/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerId: playerId.current, code }),
+      body: JSON.stringify({ playerId: playerId.current, code, ...(maxGivers !== '' && { maxGivers }) }),
     })
     if (!res.ok) {
       const data = await res.json()
@@ -123,13 +124,37 @@ export default function LobbyPage() {
         {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
         {isHost ? (
-          <button
-            onClick={startGame}
-            disabled={players.length < 2 || starting}
-            className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl py-4 font-bold text-lg transition-colors"
-          >
-            {starting ? 'Starting…' : players.length < 2 ? 'Need 2+ players to start' : '🚀 Start Game'}
-          </button>
+          <div className="space-y-3">
+            <div className="bg-gray-900 rounded-2xl p-5 space-y-2">
+              <label className="text-sm text-gray-400 block">
+                Number of clue givers
+                <span className="text-gray-600 ml-1 text-xs">(optional)</span>
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={players.length}
+                value={maxGivers}
+                placeholder={`${players.length} (default — all players)`}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value)
+                  setMaxGivers(isNaN(v) ? '' : Math.min(Math.max(1, v), players.length))
+                }}
+                className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <p className="text-xs text-gray-500">
+                Leave blank to let all {players.length} player{players.length !== 1 ? 's' : ''} take a turn. Set a lower number to end the game early.
+              </p>
+            </div>
+
+            <button
+              onClick={startGame}
+              disabled={players.length < 2 || starting}
+              className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl py-4 font-bold text-lg transition-colors"
+            >
+              {starting ? 'Starting…' : players.length < 2 ? 'Need 2+ players to start' : '🚀 Start Game'}
+            </button>
+          </div>
         ) : (
           <div className="text-center text-gray-500 py-4">
             Waiting for host to start the game…

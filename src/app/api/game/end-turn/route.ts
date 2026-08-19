@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Turn not over yet' }, { status: 400 })
   }
 
-  const isGameOver = lobby.currentGiverIndex + 1 >= lobby.playerOrder.length
+  const isGameOver = lobby.currentGiverIndex + 1 >= (lobby.maxGivers ?? lobby.playerOrder.length)
 
   const scores = lobby.players.map((p) => ({ id: p.id, name: p.name, avatar: p.avatar, score: p.score }))
 

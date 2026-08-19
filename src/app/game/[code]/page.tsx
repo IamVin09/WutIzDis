@@ -27,6 +27,7 @@ export default function GamePage() {
   const [activity, setActivity] = useState<string[]>([])
   const [isGameOver, setIsGameOver] = useState(false)
   const [hostId, setHostId] = useState<string>('')
+  const [maxGivers, setMaxGivers] = useState(0)
 
   const players = useRef<Record<string, { name: string; avatar: string }>>({})
   const currentGiverIdRef = useRef<string>('')
@@ -87,18 +88,20 @@ export default function GamePage() {
         setIsGameOver(data.isGameOver)
         setClockOffset(data.serverNow - Date.now())
         setPhase(data.phase)
+        if (data.maxGivers) setMaxGivers(data.maxGivers)
       })
 
     const pusher = getPusherClient()
     const channel = pusher.subscribe(`taboo-${code}`)
 
-    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnStartTime: number; turnEndTime: number; serverNow: number; hostId: string }) => {
+    channel.bind('game:started', (data: { playerOrder: string[]; currentGiverId: string; turnStartTime: number; turnEndTime: number; serverNow: number; hostId: string; maxGivers: number }) => {
       setClockOffset(data.serverNow - Date.now())
       setPlayerOrder(data.playerOrder)
       setCurrentGiverIndex(data.playerOrder.indexOf(data.currentGiverId))
       setTurnStartTime(data.turnStartTime)
       setTurnEndTime(data.turnEndTime)
       if (data.hostId) setHostId(data.hostId)
+      if (data.maxGivers) setMaxGivers(data.maxGivers)
       setPhase('playing')
     })
 
@@ -235,7 +238,7 @@ export default function GamePage() {
 
   const giver = scores.find((s) => s.id === currentGiverId)
   const turnNumber = currentGiverIndex + 1
-  const totalTurns = playerOrder.length
+  const totalTurns = maxGivers || playerOrder.length
 
   if (phase === 'waiting') {
     return (

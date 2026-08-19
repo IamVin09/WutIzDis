@@ -36,6 +36,7 @@ export type LobbyState = {
   turnStartTime: number | null
   turnEndTime: number | null
   leaderboardEndTime: number | null
+  maxGivers: number
 }
 
 const TTL_SECONDS = 60 * 60 * 24 // 24 hours

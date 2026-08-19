@@ -30,5 +30,6 @@ export async function GET(req: NextRequest) {
     scores,
     isGameOver: lobby.status === 'ended',
     serverNow: Date.now(),
+    maxGivers: lobby.maxGivers ?? lobby.playerOrder.length,
   })
 }
